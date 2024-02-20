@@ -10,9 +10,9 @@ successful and insightful analytics with Microsoft Fabric
 
 | Module | Lab |
 | ------ | ------ |
+| Get started with data warehouses in Microsoft Fabric | [Analyze data in a data warehouse](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/06-data-warehouse.html?WT.mc_id=academic-114547-leestott) |
 | Use Data Factory pipelines in Microsoft Fabric | [Ingest data with a pipeline in Microsoft Fabric](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/04-ingest-pipeline.html?WT.mc_id=academic-114547-leestott) |
 | Ingest Data with Dataflows Gen2 in Microsoft Fabric | [Create and use Dataflows (Gen2) in Microsoft Fabric](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/05-dataflows-gen2.html?WT.mc_id=academic-114547-leestott) |
-| Get started with data warehouses in Microsoft Fabric | [Analyze data in a data warehouse](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/06-data-warehouse.html?WT.mc_id=academic-114547-leestott) |
 | Load data into a warehouse in Microsoft Fabric | [Load data into a warehouse using T-SQL](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/06a-data-warehouse-load.html?WT.mc_id=academic-114547-leestott) |
 | Monitor a data warehouse in Microsoft Fabric | [Monitor a data warehouse in Microsoft Fabric](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/06c-monitor-data-warehouse.html?WT.mc_id=academic-114547-leestott) |
 
