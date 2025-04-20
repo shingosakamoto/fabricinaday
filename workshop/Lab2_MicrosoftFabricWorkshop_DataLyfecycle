@@ -1,0 +1,111 @@
+# Lab2: Analyze data with Apache Spark in Fabric
+
+In this lab you will ingest data into the Fabric lakehouse and use PySpark to read and analyze the data.
+
+This lab will take approximately 45 minutes to complete.
+
+## Prerequisites
+
+- A Microsoft Fabric trial.
+
+## Create a workspace
+
+Before you can work with data in Fabric you need to create a workspace.
+
+1. Navigate to the Microsoft Fabric home page at [https://app.fabric.microsoft.com/home?experience=fabric](https://app.fabric.microsoft.com/home?experience=fabric) in a browser, and sign in with your Fabric credentials.
+2. From the left menu bar, select **Workspaces (🗇)** and then **New workspace**.
+3. Give the new workspace a name and in the Advanced section, select the appropriate Licensing mode. If you have started a Microsoft Fabric trial, select **Trial**.
+4. Select **Apply** to create an empty workspace.
+
+> _Screen picture of a new Fabric workspace._
+
+---
+
+## Create a lakehouse and upload files
+
+Now that you have a workspace, you can create a lakehouse to store your data files. From your new workspace, select **+ New item** and **Lakehouse**. Give the lakehouse a name, and then select **Create**. After a short delay, a new lakehouse is created.
+
+You can now ingest data into the lakehouse. There are several ways to do this, but for now you’ll download a folder of text files to your local computer (or lab VM if applicable) and then upload them to your lakehouse.
+
+1. Download the datafiles from [https://github.com/MicrosoftLearning/dp-data/raw/main/orders.zip](https://github.com/MicrosoftLearning/dp-data/raw/main/orders.zip).
+2. Extract the zipped archive and verify that you have a folder named **orders** which contains three CSV files: **2019.csv**, **2020.csv**, and **2021.csv**.
+3. Return to your new lakehouse. In the Explorer pane, next to the **Files** folder select the **… menu**, and select **Upload** and **Upload folder**.
+4. Navigate to the orders folder on your local computer (or lab VM if applicable) and select **Upload**.
+
+After the files have been uploaded, expand **Files** and select the **orders** folder. Check that the CSV files have been uploaded, as shown here:
+
+> _Screen picture of CSV files uploaded to a new Fabric workspace._
+
+---
+
+## Create a notebook
+
+You can now create a Fabric notebook to work with your data. Notebooks provide an interactive environment where you can write and run code.
+
+1. Select your workspace, then select **+ New item** and **Notebook**.
+2. After a few seconds, a new notebook containing a single cell will open.
+
+> Notebooks are made up of one or more cells that can contain code or markdown (formatted text).
+
+Fabric assigns a name to each notebook you create, such as **Notebook 1**, **Notebook 2**, etc. Click the name panel above the Home tab on the menu to change the name to something more descriptive.
+
+- Select the first cell (currently a code cell), and then in the top-right tool bar, use the **M↓ button** to convert it to a markdown cell.  
+- Use the **🖉 (Edit)** button to switch the cell to editing mode, then modify the markdown as shown below.
+
+````markdown
+# Sales order data exploration
+Use this notebook to explore sales order data
+````
+
+> _Screen picture of a Fabric notebook with a markdown cell._
+
+When you have finished, click anywhere in the notebook outside of the cell to stop editing it and see the rendered markdown.
+
+---
+
+## Create a DataFrame
+
+Now that you have created a workspace, a lakehouse, and a notebook you are ready to work with your data. You will use PySpark, which is the default language for Fabric notebooks, and the version of Python that is optimized for Spark.
+
+> **[!NOTE]** Fabric notebooks support multiple programming languages including Scala, R, and Spark SQL.
+
+- Select your new workspace from the left bar. You will see a list of items contained in the workspace including your lakehouse and notebook.
+- Select the lakehouse to display the Explorer pane, including the orders folder.
+- From the top menu, select **Open notebook > Existing notebook**, and then open the notebook you created earlier. The notebook should now be open next to the Explorer pane.
+- Expand **Lakehouses**, expand the **Files** list, and select the **orders** folder. The CSV files that you uploaded are listed next to the notebook editor.
+
+> _Screen picture of csv files in Explorer view._
+
+From the **… menu** for **2019.csv**, select **Load data > Spark**. The following code is automatically generated in a new code cell:
+
+```python
+df = spark.read.format("csv").option("header","true").load("Files/orders/2019.csv")
+# df now is a Spark DataFrame containing CSV data from "Files/orders/2019.csv".
+display(df)
+```
+
+> **[!TIP]** You can hide the Lakehouse explorer panes on the left by using the « icons. This gives more space for the notebook.
+
+Select ▷ **Run cell** to the left of the cell to run the code.
+
+> **[!NOTE]** The first time you run Spark code, a Spark session is started. This can take a few seconds or longer. Subsequent runs within the same session will be quicker.
+
+When the cell code has completed, review the output below the cell, which should look like this:
+
+> _Screen picture showing auto generated code and data._
+
+---
+
+✅ **This is up to the first few sections.**
+
+The document is very long so I suggest sending in pieces like:
+
+- "Create a DataFrame" (continued)
+- "Explore data in a DataFrame"
+- "Transform data with Spark"
+- "Work with tables and SQL"
+- "Visualize data with Spark"
+- "Clean up resources"
+
+**Shall I continue immediately with the next part?** (If yes, I'll continue right from "correcting header options and schema definition.")  
+👉 Just reply "**continue**" to keep it flowing!
