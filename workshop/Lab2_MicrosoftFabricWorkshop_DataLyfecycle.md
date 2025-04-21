@@ -228,33 +228,192 @@ display(yearlySales)
 
 ## Use Spark to transform data files
 
-A common task for data engineers and data scientists is to transform data for further downstream processing or analysis.
+A common task for data engineers and data scientists is to transform data for further downstream processing or analysis. Now you’ll use a new notebook to transform the data further, model it into a star schema, and load it into gold Delta tables.
 
-### Use DataFrame methods and functions to transform data
-
-1. Add a code cell to the notebook, and enter the following:
+### Create Dimension Table
+1. Add a new code block and paste the following code to create your date dimension table and run it:
 
 ```python
-from pyspark.sql.functions import *
+ from pyspark.sql.types import *
+from delta.tables import *
+    
+DeltaTable.createIfNotExists(spark) \
+    .tableName("dimproduct_gold") \
+    .addColumn("ItemName", StringType()) \
+    .addColumn("ItemID", LongType()) \
+    .addColumn("ItemInfo", StringType()) \
+    .execute()
+```
+> **[!NOTE]** You can run the display(df) command at any time to check the progress of your work. In this case, you’d run ‘display(dfdimDate_gold)’ to see the contents of the dimDate_gold dataframe.
 
-# Create Year and Month columns
-transformed_df = df.withColumn("Year", year(col("OrderDate"))).withColumn("Month", month(col("OrderDate")))
+2. Add another code block to create the product_silver dataframe.
 
-# Create the new FirstName and LastName fields
-transformed_df = transformed_df.withColumn("FirstName", split(col("CustomerName"), " ").getItem(0)).withColumn("LastName", split(col("CustomerName"), " ").getItem(1))
+```python
+from pyspark.sql.functions import col, split, lit, when
+    
+# Create product_silver dataframe
+    
+dfdimProduct_silver = df.dropDuplicates(["Item"]).select(col("Item")) \
+    .withColumn("ItemName",split(col("Item"), ", ").getItem(0)) \
+    .withColumn("ItemInfo",when((split(col("Item"), ", ").getItem(1).isNull() | (split(col("Item"), ", ").getItem(1)=="")),lit("")).otherwise(split(col("Item"), ", ").getItem(1))) 
+    
+# Display the first 10 rows of the dataframe to preview your data
 
-# Filter and reorder columns
-transformed_df = transformed_df["SalesOrderNumber", "SalesOrderLineNumber", "OrderDate", "Year", "Month", "FirstName", "LastName", "Email", "Item", "Quantity", "UnitPrice", "Tax"]
+display(dfdimProduct_silver.head(10))
+```
+3. Now you’ll create IDs for your dimProduct_gold table. Add the following syntax to a new code block and run it:
+```python
+from pyspark.sql.functions import monotonically_increasing_id, col, lit, max, coalesce
+    
+#dfdimProduct_temp = dfdimProduct_silver
+dfdimProduct_temp = spark.read.table("Sales.dimProduct_gold")
+    
+MAXProductID = dfdimProduct_temp.select(coalesce(max(col("ItemID")),lit(0)).alias("MAXItemID")).first()[0]
+    
+dfdimProduct_gold = dfdimProduct_silver.join(dfdimProduct_temp,(dfdimProduct_silver.ItemName == dfdimProduct_temp.ItemName) & (dfdimProduct_silver.ItemInfo == dfdimProduct_temp.ItemInfo), "left_anti")
+    
+dfdimProduct_gold = dfdimProduct_gold.withColumn("ItemID",monotonically_increasing_id() + MAXProductID + 1)
+    
+# Display the first 10 rows of the dataframe to preview your data
 
-# Display the first five orders
-display(transformed_df.limit(5))
+display(dfdimProduct_gold.head(10))
+```
+This calculates the next available product ID based on the current data in the table, assigns these new IDs to the products, and then displays the updated product information.
+
+4. Now you’ll ensure that your product table remains up-to-date as new data comes in. In a new code block, paste and run the following:
+```python
+from delta.tables import *
+    
+deltaTable = DeltaTable.forPath(spark, 'Tables/dimproduct_gold')
+            
+dfUpdates = dfdimProduct_gold
+            
+deltaTable.alias('gold') \
+  .merge(
+        dfUpdates.alias('updates'),
+        'gold.ItemName = updates.ItemName AND gold.ItemInfo = updates.ItemInfo'
+        ) \
+        .whenMatchedUpdate(set =
+        {
+               
+        }
+        ) \
+        .whenNotMatchedInsert(values =
+         {
+          "ItemName": "updates.ItemName",
+          "ItemInfo": "updates.ItemInfo",
+          "ItemID": "updates.ItemID"
+          }
+          ) \
+          .execute()
+```
+Now that you have your dimensions built out, the final step is to create the fact table.
+
+### Create Fact Table
+5. In a new code block, paste and run the following code to create the fact table:
+```python
+from pyspark.sql.types import *
+from delta.tables import *
+    
+DeltaTable.createIfNotExists(spark) \
+    .tableName("factsales_gold") \
+    .addColumn("CustomerID", LongType()) \
+    .addColumn("ItemID", LongType()) \
+    .addColumn("OrderDate", DateType()) \
+    .addColumn("Quantity", IntegerType()) \
+    .addColumn("UnitPrice", FloatType()) \
+    .addColumn("Tax", FloatType()) \
+    .execute()
 ```
 
-2. Run the cell. A new DataFrame is created from the original order data with the following transformations:
+6. In a new code block, paste and run the following code to create a new dataframe to combine sales data with customer and product information include customer ID, item ID, order date, quantity, unit price, and tax:
 
-- **Year** and **Month** columns added, based on the **OrderDate** column.
-- **FirstName** and **LastName** columns added, based on the **CustomerName** column.
-- The columns are filtered and reordered, and the **CustomerName** column removed.
+```python
+from pyspark.sql.functions import col
+    
+dfdimProduct_temp = spark.read.table("dimProduct_gold")
+    
+df = df.withColumn("ItemName",split(col("Item"), ", ").getItem(0)) \
+    .withColumn("ItemInfo",when((split(col("Item"), ", ").getItem(1).isNull() | (split(col("Item"), ", ").getItem(1)=="")),lit("")).otherwise(split(col("Item"), ", ").getItem(1))) \
+    
+    
+# Create Sales_gold dataframe
+    
+dffactSales_gold = df.alias("df1").join(dfdimProduct_temp.alias("df2"),(df.ItemName == dfdimProduct_temp.ItemName) & (df.ItemInfo == dfdimProduct_temp.ItemInfo), "left") \
+        .select(col("df2.ItemID") \
+        , col("df1.OrderDate") \
+        , col("df1.Quantity") \
+        , col("df1.UnitPrice") \
+        , col("df1.Tax") \
+    ).orderBy(col("df1.OrderDate"), col("df2.ItemID"))
+    
+# Display the first 10 rows of the dataframe to preview your data
+    
+display(dffactSales_gold.head(10))
+```
+7. Now you’ll ensure that sales data remains up-to-date by running the following code in a new code block:
+
+```python
+from delta.tables import *
+    
+deltaTable = DeltaTable.forPath(spark, 'Tables/factsales_gold')
+    
+dfUpdates = dffactSales_gold
+    
+deltaTable.alias('gold') \
+  .merge(
+    dfUpdates.alias('updates'),
+    'gold.OrderDate = updates.OrderDate AND gold.ItemID = updates.ItemID'
+  ) \
+   .whenMatchedUpdate(set =
+    {
+          
+    }
+  ) \
+ .whenNotMatchedInsert(values =
+    {
+      "ItemID": "updates.ItemID",
+      "OrderDate": "updates.OrderDate",
+      "Quantity": "updates.Quantity",
+      "UnitPrice": "updates.UnitPrice",
+      "Tax": "updates.Tax"
+    }
+  ) \
+  .execute()
+```
+Here you’re using Delta Lake’s merge operation to synchronize and update the factsales_gold table with new sales data (dffactSales_gold). The operation compares the order date, customer ID, and item ID between the existing data (silver table) and the new data (updates DataFrame), updating matching records and inserting new records as needed.
+
+## Create a semantic model
+
+In your workspace, you can now use the gold layer to create a report and analyze the data. You can access the semantic model directly in your workspace to create relationships and measures for reporting.
+
+Note that you can’t use the default semantic model that is automatically created when you create a lakehouse. You must create a new semantic model that includes the gold tables you created in this exercise, from the lakehouse explorer.
+
+1. In your workspace, navigate to your Sales lakehouse.
+
+2. Select New semantic model from the ribbon of the lakehouse explorer view.
+
+3. Assign the name Sales_Gold to your new semantic model.
+
+4. Select your transformed gold tables to include in your semantic model and select Confirm.
+- dimproduct_gold
+- factsales_gold
+  
+This will open the semantic model in Fabric where you can create relationships and measures, as shown here:
+
+From here, you or other members of your data team can create reports and dashboards based on the data in your lakehouse. These reports will be connected directly to the gold layer of your lakehouse, so they’ll always reflect the latest data.
+
+
+
+
+
+
+
+
+
+
+
+
 
 3. Review the output and verify that the transformations have been made to the data.
 
@@ -401,4 +560,3 @@ Observe that:
 - The output from the SQL query is automatically displayed as the result under the cell.
 
 > **[!NOTE]** For more information about Spark SQL and dataframes, see the Apache Spark SQL documentation.
-
