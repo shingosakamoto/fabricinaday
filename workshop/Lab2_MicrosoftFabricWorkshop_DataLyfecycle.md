@@ -402,18 +402,3 @@ Observe that:
 
 > **[!NOTE]** For more information about Spark SQL and dataframes, see the Apache Spark SQL documentation.
 
----
-
-✅  
-This now completes up to **"Work with tables and SQL"**.
-
----
-
-Next we'll move to:
-- Visualize data with Spark
-- Get started with matplotlib
-- Use the seaborn library
-- Clean up resources
-
-**Would you like me to continue into the Visualize section now?**  
-👉 Just reply **continue** and I’ll move ahead! 🚀
