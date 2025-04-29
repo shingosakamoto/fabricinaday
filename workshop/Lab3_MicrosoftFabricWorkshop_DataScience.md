@@ -202,15 +202,14 @@ The code trains a regression model using Linear Regression. Parameters, metrics,
     ```
 The code creates an MLflow experiment named **your unique identifier diabetes-classification**. Your models will be tracked in this experiment.
 3. Add another new code cell to the notebook, enter the following code in it, and run it:
-
-    ```python
-    from sklearn.linear_model import LogisticRegression
+   ```python
+   from sklearn.linear_model import LogisticRegression
         
-    with mlflow.start_run():
+   with mlflow.start_run():
         mlflow.sklearn.autolog()
     
         model = LogisticRegression(C=1/0.1, solver="liblinear").fit(X_train, y_train)
-    ```
+   ```
 
 The code trains a classification model using Logistic Regression. Parameters, metrics, and artifacts, are automatically logged with MLflow.
 
