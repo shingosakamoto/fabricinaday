@@ -165,7 +165,7 @@ This code loads the data from the sales.csv file that was ingested by the Copy D
    - **File path or URL**: `https://raw.githubusercontent.com/MicrosoftLearning/dp-data/main/orders.csv`
    - **Connection**: Create new connection
    - **Data gateway**: (none)
-   - **Authentication kind**: Organizational account
+   - **Authentication kind**: Annonymous
 
 5. Select **Next** to preview the file data, and then **Create** the data source. The Power Query editor shows the data source and an initial set of query steps to format the data, as shown here:
 
